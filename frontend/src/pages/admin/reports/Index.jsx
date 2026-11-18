@@ -1,273 +1,338 @@
 import {
-  AlertTriangle,
-  Archive,
-  CalendarDays,
-  Check,
+  CheckCircle2,
   ChevronDown,
-  ClipboardCheck,
+  ClipboardList,
   Download,
-  FileText,
-  Filter,
-  MoreVertical,
   Plus,
-  RefreshCw,
   Search,
-  SlidersHorizontal,
-  UserRound,
+  UsersRound,
+  Wrench,
+  Archive,
+  X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar.jsx";
 import AdminTopbar from "../components/AdminTopbar.jsx";
+import ReportTable from "./components/ReportTable.jsx";
 
-const reports = [
-  {
-    id: "#SD-2024-1082",
-    date: "21 Okt 2024, 08:30 WIB",
-    reporter: "Joko Santoso",
-    location: "Dusun Krajan (RW 02 / RT 04)",
-    contact: "0812–3456–7890",
-    category: "Infrastruktur & Jalan",
-    title:
-      "Amblasnya Aspal dan Saluran Gorong-gorong Jalan Utama Dusun Krajan...",
-    detail: "Aspal retak sepanjang 40cm pasca-hujan lebat semalam.",
-    urgency: "Mendesak",
-    urgencyTone: "red",
-    sla: "Sisa 12 Jam",
-    officer: "Pak Suyatno",
-    officerRole: "Kaur Pembangunan & Tim Jalan",
-    status: "Pengerjaan Lapangan (55%)",
-    statusTone: "blue",
-    action: "Detail & Proses",
-  },
-  {
-    id: "#SD-2024-1085",
-    date: "21 Okt 2024, 09:12 WIB",
-    reporter: "Ibu Sumiati",
-    location: "Dusun Mawar (RT 03 / RW 01)",
-    contact: "0857–1234–5678 (WA)",
-    category: "Rencana & Fasum",
-    title: "Pohon Randu Tumbang Menimpa Kabel...",
-    detail: "Dahan besar patah akibat angin kencang. Kabel layanan terputus...",
-    urgency: "Darurat / Mendesak",
-    urgencyTone: "red",
-    sla: "Butuh Atas Segera",
-    officer: "Belum Ada Petugas",
-    officerRole: "Rekomendasi: Satgas Linmas & PLN",
-    status: "Menunggu Verifikasi",
-    statusTone: "orange",
-    action: "Verifikasi Cepat",
-  },
-  {
-    id: "#SD-2024-1081",
-    date: "20 Okt 2024, 19:40 WIB",
-    reporter: "Budi Aminah",
-    location: "Dusun Kuning (RW 01 / Depan Lapangan)",
-    contact: "0821–9988–7766 (WA)",
-    category: "Penerangan & Fasum",
-    title: "Lampu Penerangan Jalan Poros Padam 4",
-    detail: "Kondisi jalan desa dalam penerangan gelap...",
-    urgency: "Prioritas Sedang",
-    urgencyTone: "peach",
-    sla: "Sisa 3 Hari",
-    officer: "Mas Rian",
-    officerRole: "Teknisi Kelistrikan Desa",
-    status: "Disposisi Terbit",
-    statusTone: "gray",
-    action: "Detail & Proses",
-  },
-  {
-    id: "#SD-2024-1078",
-    date: "19 Okt 2024, 14:15 WIB",
-    reporter: "Karang Taruna RW 04",
-    location: "Dusun Sukamaju",
-    contact: "0813–1122–3344 (WA)",
-    category: "Kebersihan & Lingkungan",
-    title: "Tumpukan Pembuangan Sampah Liar...",
-    detail: "Banyak oknum liar disembunyikan sampah konten plastik &...",
-    urgency: "Prioritas Tinggi",
-    urgencyTone: "peach",
-    sla: "Sesuai Jadwal",
-    officer: "Regu Kebersihan Desa",
-    officerRole: "Pak Samad & 3 Petugas",
-    status: "Pengerjaan Lapangan (80%)",
-    statusTone: "blue",
-    action: "Detail & Proses",
-  },
-  {
-    id: "#SD-2024-1075",
-    date: "18 Okt 2024, 07:06 WIB",
-    reporter: "Aparatur Desa",
-    location: "Dusun Tirto (RT 02 / RW 04)",
-    contact: "0852–3344–5566 (WA)",
-    category: "Irigrasi & Pertanian",
-    title: "Pintu Air Dampar Batang Kayu &...",
-    detail:
-      "Aliran debit air irigasi tersendat menuju 15 hektar sawah produktif.",
-    urgency: "Prioritas Tinggi",
-    urgencyTone: "peach",
-    sla: "Tuntas Tepat Waktu",
-    officer: "Ulu-Ulu Desa",
-    officerRole: "Irigrasi & Piket",
-    status: "Validasi Selesai",
-    statusTone: "mint",
-    action: "Validasi Kades",
-  },
-  {
-    id: "#SD-2024-1069",
-    date: "15 Okt 2024, 11:20 WIB",
-    reporter: "Ahmad Dani",
-    location: "Dusun Ngumpul (RW 02 / Depan Mushola)",
-    contact: "0877–1122–3377 (WA)",
-    category: "Infrastruktur & Jalan",
-    title: "Pengajuan Pembuatan Saluran Air Baru...",
-    detail: "Pemasangan bibir beton 5 meter telah mengurangi genangan.",
-    urgency: "Normal",
-    urgencyTone: "gray",
-    sla: "Tuntas Sempurna",
-    officer: "Pak Suyatno",
-    officerRole: "Kaur Pembangunan",
-    status: "Selesai & Ditutup",
-    statusTone: "mint",
-    action: "Lihat Arsip",
-  },
-];
+const API_URL = (
+  import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/reports"
+).replace(/\/$/, "");
 
-function Badge({ children, tone = "gray" }) {
-  return <span className={`reports-badge ${tone}`}>{children}</span>;
-}
+const API_URL_SUMMARY = `${API_URL}/counts`;
 
-function ReportRow({ report }) {
-  return (
-    <tr className="report-row">
-      {/* Checkbox */}
-      <td className="report-check">
-        <input type="checkbox" aria-label={`Pilih pengaduan ${report.id}`} />
-      </td>
-
-      {/* Nomor Tiket & Tanggal */}
-      <td>
-        <div className="report-ticket">
-          <b>{report.id}</b>
-          <small>{report.date}</small>
-          <em>▣ Aplikasi Mobile</em>
-        </div>
-      </td>
-
-      {/* Pelapor & Lokasi */}
-      <td>
-        <div className="report-person">
-          <b>
-            <UserRound size={11} />
-            {report.reporter}
-          </b>
-
-          <small>⌖ {report.location}</small>
-
-          <a href={`tel:${report.contact.replace(/[^0-9]/g, "")}`}>
-            ▣ {report.contact}
-          </a>
-        </div>
-      </td>
-
-      {/* Rincian Pengaduan & Bukti */}
-      <td>
-        <div className="report-detail">
-          <Badge tone="light-blue">{report.category}</Badge>
-
-          <b>{report.title}</b>
-          <small>{report.detail}</small>
-
-          <span className="attachment">
-            ▧ {report.id.endsWith("82") ? "2" : "1"} Foto{" "}
-            {report.id.endsWith("82") ? "Bukti" : "Lampiran"}
-          </span>
-        </div>
-      </td>
-
-      {/* Urgensi & SLA */}
-      <td>
-        <div className="report-urgency">
-          <Badge tone={report.urgencyTone}>{report.urgency}</Badge>
-
-          <b>
-            {report.urgencyTone === "red" ? "●" : "◷"} {report.sla}
-          </b>
-
-          <small>Target SLA: 24 jam</small>
-        </div>
-      </td>
-
-      {/* Disposisi Petugas */}
-      <td>
-        <div className="report-officer">
-          <b>
-            <i>{report.officer.slice(0, 2)}</i>
-            {report.officer}
-          </b>
-
-          <small>{report.officerRole}</small>
-
-          {report.officer.includes("Belum") && (
-            <button type="button">
-              <ClipboardCheck size={11} />
-              Tugaskan Tim
-            </button>
-          )}
-        </div>
-      </td>
-
-      {/* Status Penanganan */}
-      <td>
-        <div className="report-status">
-          <Badge tone={report.statusTone}>{report.status}</Badge>
-
-          <small>
-            {report.statusTone === "blue"
-              ? "Menunggu update terakhir"
-              : report.statusTone === "orange"
-                ? "Menunggu ACC Admin Desa"
-                : "Estimasi pengerjaan besok"}
-          </small>
-        </div>
-      </td>
-
-      {/* Aksi Cepat */}
-      <td>
-        <div className="report-action">
-          <button
-            type="button"
-            className={
-              report.action.includes("Verifikasi") ? "primary-action" : ""
-            }
-          >
-            {report.action}
-          </button>
-
-          <MoreVertical size={15} />
-        </div>
-      </td>
-    </tr>
-  );
-}
+const PAGE_SIZE = 10;
 
 export default function IndexReports() {
+  const navigate = useNavigate();
   const [active, setActive] = useState("Pengaduan Masalah");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Semua Kategori");
-  const filteredReports = useMemo(
-    () =>
-      reports.filter(
-        (item) =>
-          `${item.id} ${item.title} ${item.reporter}`
+  const [tab, setTab] = useState("all");
+
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [page, setPage] = useState(1);
+
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [summary, setSummary] = useState({
+    total_pengaduan: 0,
+    perlu_verifikasi: 0,
+    sedang_diproses: 0,
+    selesai: 0,
+    ditolak: 0,
+  });
+
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [summaryError, setSummaryError] = useState("");
+
+  const stats = [
+    [
+      "Total Pengaduan",
+      summary.total_pengaduan,
+      "Seluruh laporan pengaduan",
+      ClipboardList,
+      "neutral",
+    ],
+    [
+      "Perlu Verifikasi",
+      summary.perlu_verifikasi,
+      "Membutuhkan tindakan",
+      Archive,
+      "orange",
+    ],
+    [
+      "Sedang Diproses",
+      summary.sedang_diproses,
+      "Dalam penanganan",
+      UsersRound,
+      "blue",
+    ],
+    [
+      "Terselesaikan",
+      summary.selesai,
+      "Pengaduan selesai",
+      CheckCircle2,
+      "green",
+    ],
+    ["Ditolak", summary.ditolak, "Pengaduan ditolak", X, "red"],
+  ];
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function fetchReports() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(API_URL, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error("Gagal mengambil data laporan");
+        }
+
+        const result = await response.json();
+
+        if (!Array.isArray(result.data)) {
+          throw new Error("Format respons API tidak valid");
+        }
+
+        const formattedReports = result.data.map((report) => {
+          const statusConfig = {
+            diajukan: {
+              tone: "waiting",
+              action: "Verifikasi",
+            },
+            diproses: {
+              tone: "progress",
+              action: "Proses",
+            },
+            selesai: {
+              tone: "done",
+              action: "Lihat",
+            },
+            ditolak: {
+              tone: "rejected",
+              action: "Lihat",
+            },
+          };
+
+          const config = statusConfig[report.status] ?? {
+            tone: "waiting",
+            action: "Lihat",
+          };
+
+          return {
+            ...report,
+            id: String(report.id),
+            reporter: report.reporter ?? "Tidak diketahui",
+            location: report.location ?? "Lokasi tidak tersedia",
+            phone: report.phone ?? "",
+            category: report.category ?? "-",
+            detail: report.description ?? "Tidak ada deskripsi laporan.",
+            photos: Number(report.photos ?? 0),
+            date: Number.isNaN(new Date(report.created_at).getTime())
+              ? "Tanggal tidak tersedia"
+              : new Intl.DateTimeFormat("id-ID", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "Asia/Jakarta",
+                }).format(new Date(report.created_at)),
+            statusTone: config.tone,
+            action: config.action,
+            statusLabel:
+              report.status === "diajukan"
+                ? "Menunggu Verifikasi"
+                : report.status === "diproses"
+                  ? "Sedang Diproses"
+                  : report.status === "selesai"
+                    ? "Selesai & Arsip"
+                    : "Ditolak",
+          };
+        });
+
+        setReports(formattedReports);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setError(err.message);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    async function fetchSummary() {
+      try {
+        setSummaryLoading(true);
+        setSummaryError("");
+
+        const response = await fetch(API_URL_SUMMARY, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error("Gagal mengambil data ringkasan laporan");
+        }
+
+        const result = await response.json();
+
+        const data = result.data;
+
+        if (
+          !data ||
+          [
+            "total_pengaduan",
+            "perlu_verifikasi",
+            "sedang_diproses",
+            "selesai",
+            "ditolak",
+          ].some(
+            (key) =>
+              data[key] === undefined ||
+              data[key] === null ||
+              !Number.isFinite(Number(data[key])),
+          )
+        ) {
+          throw new Error("Format respons ringkasan API tidak valid");
+        }
+
+        if (!controller.signal.aborted) {
+          setSummary({
+            total_pengaduan: Number(data.total_pengaduan),
+            perlu_verifikasi: Number(data.perlu_verifikasi),
+            sedang_diproses: Number(data.sedang_diproses),
+            selesai: Number(data.selesai),
+            ditolak: Number(data.ditolak),
+          });
+        }
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setSummaryError(err.message);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSummaryLoading(false);
+        }
+      }
+    }
+
+    fetchSummary();
+
+    fetchReports();
+
+    return () => controller.abort();
+  }, []);
+
+  const filteredReports = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return reports.filter((report) => {
+      const matchesQuery =
+        !normalizedQuery ||
+        [
+          report.id,
+          report.title,
+          report.reporter,
+          report.location,
+          report.category,
+        ].some((value) =>
+          String(value ?? "")
             .toLowerCase()
-            .includes(query.toLowerCase()) &&
-          (category === "Semua Kategori" || item.category === category),
-      ),
-    [query, category],
+            .includes(normalizedQuery),
+        );
+
+      const matchesCategory =
+        category === "Semua Kategori" || report.category === category;
+      const matchesTab =
+        tab === "all" ||
+        (tab === "waiting" && report.status === "diajukan") ||
+        (tab === "processing" && report.status === "diproses") ||
+        (tab === "done" && report.status === "selesai");
+
+      return matchesQuery && matchesCategory && matchesTab;
+    });
+  }, [category, query, reports, tab]);
+
+  const categoryOptions = useMemo(
+    () => [
+      ...new Set(reports.map((report) => report.category).filter(Boolean)),
+    ],
+    [reports],
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredReports.length / PAGE_SIZE));
+  const paginatedReports = filteredReports.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [category, query, tab]);
+
+  useEffect(() => {
+    setPage((currentPage) => Math.min(currentPage, totalPages));
+    setSelectedIds((currentIds) =>
+      currentIds.filter((id) =>
+        filteredReports.some((report) => report.id === id),
+      ),
+    );
+  }, [filteredReports, totalPages]);
+
+  const toggleReport = (id) => {
+    setSelectedIds((currentIds) =>
+      currentIds.includes(id)
+        ? currentIds.filter((currentId) => currentId !== id)
+        : [...currentIds, id],
+    );
+  };
+
+  const toggleAll = (checked) => {
+    setSelectedIds((currentIds) =>
+      checked
+        ? [
+            ...new Set([
+              ...currentIds,
+              ...paginatedReports.map((report) => report.id),
+            ]),
+          ]
+        : currentIds.filter(
+            (id) => !paginatedReports.some((report) => report.id === id),
+          ),
+    );
+  };
+
+  const tabItems = [
+    ["all", `Semua (${reports.length})`],
+    [
+      "waiting",
+      `Menunggu Verifikasi (${reports.filter((report) => report.status === "diajukan").length})`,
+    ],
+    [
+      "processing",
+      `Diproses (${reports.filter((report) => report.status === "diproses").length})`,
+    ],
+    [
+      "done",
+      `Selesai (${reports.filter((report) => report.status === "selesai").length})`,
+    ],
+  ];
+
   return (
-    <div className="admin-page reports-page">
+    <div className="admin-page reports-page report-queue-page">
       <AdminSidebar
         active={active}
         setActive={setActive}
@@ -277,157 +342,110 @@ export default function IndexReports() {
       <div className="admin-content">
         <AdminTopbar setOpen={setSidebarOpen} />
         <main className="admin-main reports-main">
-          <div className="admin-heading">
+          <div className="report-queue-heading">
             <div>
-              <h1>Manajemen Pengaduan</h1>
+              <h1>Manajemen Pengaduan Warga</h1>
               <p>
-                Pantau dan kelola antrean pengaduan warga, verifikasi laporan
-                masuk, dan tindak lanjut petugas desa secara realtime.
+                Kelola verifikasi, penugasan tim lapangan, dan pantau status
+                tindak lanjut aduan.
               </p>
             </div>
-          </div>
-          <div className="reports-toolbar">
-            <div className="reports-actions">
-              <button className="select-action">
-                <Archive size={13} /> Aksi Massal (0 dipilih){" "}
-                <ChevronDown size={12} />
-              </button>
-              <button>
+            <div className="report-heading-actions">
+              <button type="button">
                 <Download size={13} /> Ekspor Data
               </button>
-              <button>
-                <ClipboardCheck size={13} /> Cetak Rekap Disposisi
-              </button>
-              <button className="manual-report">
-                <Plus size={13} /> Input Pengaduan Manual / Loket
+              <button
+                type="button"
+                className="manual-report"
+                onClick={() => navigate("/admin/reports/form")}
+              >
+                <Plus size={13} /> Buat Pengaduan
               </button>
             </div>
           </div>
-          <section className="reports-filter">
-            <label className="report-search">
-              <Search size={14} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cari tiket, judul laporan, atau nama pelapor..."
-              />
-            </label>
-            <div className="report-filter-grid">
-              <label>
-                <small>KATEGORI ADUAN</small>
+          <section className="report-stat-grid">
+            {stats.map(([label, value, note, Icon, tone]) => (
+              <article className={`report-stat-card ${tone}`} key={label}>
+                <div>
+                  <span>{label}</span>
+                  <strong>
+                    {summaryLoading || summaryError ? "—" : value}
+                  </strong>
+                  <small>
+                    {summaryError
+                      ? "Gagal memuat statistik"
+                      : summaryLoading
+                        ? "Memuat statistik..."
+                        : note}
+                  </small>
+                </div>
+                <Icon size={19} />
+              </article>
+            ))}
+          </section>
+          <section className="report-controls">
+            <div className="report-tabs">
+              {tabItems.map(([value, label]) => (
+                <button
+                  type="button"
+                  className={tab === value ? "active" : ""}
+                  onClick={() => setTab(value)}
+                  key={value}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="report-control-filters">
+              <label className="report-search">
+                <Search size={14} />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Cari nomor tiket, nama pelapor, atau topik..."
+                />
+              </label>
+              <label className="report-category-select">
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(event) => setCategory(event.target.value)}
                 >
                   <option>Semua Kategori</option>
-                  <option>Infrastruktur & Jalan</option>
-                  <option>Penerangan & Fasum</option>
-                  <option>Kebersihan & Lingkungan</option>
-                  <option>Rencana & Fasum</option>
+                  {categoryOptions.map((option) => (
+                    <option key={option}>{option}</option>
+                  ))}
                 </select>
+                <ChevronDown size={14} />
               </label>
-              <label>
-                <small>WILAYAH / DUSUN</small>
-                <select>
-                  <option>Semua Dusun</option>
-                  <option>Dusun Krajan</option>
-                  <option>Dusun Mawar</option>
-                </select>
-              </label>
-              <label>
-                <small>TINGKAT URGENSI</small>
-                <select>
-                  <option>Semua Urgensi</option>
-                  <option>Mendesak</option>
-                  <option>Prioritas Tinggi</option>
-                </select>
-              </label>
-              <label>
-                <small>RENTANG WAKTU</small>
-                <div className="date-filter-input">
-                  <CalendarDays size={13} /> 30 Hari Terakhir{" "}
-                  <CalendarDays size={12} />
-                </div>
-              </label>
-              <button
-                className="reset-filter"
-                onClick={() => {
-                  setQuery("");
-                  setCategory("Semua Kategori");
-                }}
-              >
-                <RefreshCw size={12} /> Reset Filter
-              </button>
             </div>
           </section>
-
-          <section className="reports-table-card">
-            <div className="reports-list-heading">
-              <h2>
-                Daftar Antrean Pengaduan{" "}
-                <small>Menampilkan {filteredReports.length} dari 57 data</small>
-              </h2>
-
-              <span>
-                Diperbarui: 2 menit yang lalu
-                <RefreshCw size={11} />
-              </span>
+          <div className="report-selection-bar">
+            <span>
+              <Wrench size={13} />{" "}
+              {selectedIds.length
+                ? `${selectedIds.length} pengaduan dipilih`
+                : "Pilih pengaduan untuk aksi massal"}
+            </span>
+          </div>
+          {loading && (
+            <div className="reports-feedback">Memuat data pengaduan...</div>
+          )}
+          {error && (
+            <div className="reports-feedback error">
+              {error}. Pastikan server API berjalan di {API_URL}.
             </div>
-
-            <div className="reports-table-wrapper">
-              <table className="reports-table">
-                <thead>
-                  <tr>
-                    <th>
-                      <input
-                        type="checkbox"
-                        aria-label="Pilih semua pengaduan"
-                      />
-                    </th>
-                    <th>NO. TIKET & TANGGAL</th>
-                    <th>PELAPOR & LOKASI</th>
-                    <th>RINCIAN PENGADUAN & BUKTI</th>
-                    <th>URGENSI & SLA</th>
-                    <th>DISPOSISI PETUGAS</th>
-                    <th>STATUS PENANGANAN</th>
-                    <th>AKSI CEPAT</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredReports.length > 0 ? (
-                    filteredReports.map((report) => (
-                      <ReportRow report={report} key={report.id} />
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={8} className="reports-empty">
-                        Tidak ada pengaduan ditemukan.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="reports-pagination">
-              <span>
-                Tampilkan: <b>10 data</b>
-                &nbsp;&nbsp;&nbsp; Menampilkan 1 - {filteredReports.length} dari
-                total 57 tiket pengaduan warga
-              </span>
-
-              <div>
-                <button>‹</button>
-                <button className="current">1</button>
-                <button>2</button>
-                <button>3</button>
-                <span>...</span>
-                <button>6</button>
-                <button>›</button>
-              </div>
-            </div>
-          </section>
+          )}
+          <ReportTable
+            reports={loading || error ? [] : paginatedReports}
+            selectedIds={selectedIds}
+            onToggle={toggleReport}
+            onToggleAll={toggleAll}
+            page={page}
+            totalPages={totalPages}
+            totalItems={filteredReports.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </main>
       </div>
     </div>
