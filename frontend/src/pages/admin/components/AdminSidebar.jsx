@@ -52,6 +52,14 @@ export default function AdminSidebar({ open, setOpen }) {
     setOpen(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("suara_desa_token");
+    localStorage.removeItem("suara_desa_user");
+    sessionStorage.removeItem("suara_desa_token");
+    sessionStorage.removeItem("suara_desa_user");
+    navigate("/login", { replace: true });
+  };
+
   return (
     <aside className={`admin-sidebar ${open ? "open" : ""}`}>
       <div className="admin-brand">
@@ -116,7 +124,7 @@ export default function AdminSidebar({ open, setOpen }) {
           Pengaturan Sistem
         </button>
 
-        <button className="logout">
+        <button className="logout" type="button" onClick={handleLogout}>
           <LogOut size={15} />
           Keluar / Logout
         </button>

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(180) NOT NULL UNIQUE,
+  password VARCHAR(255),
   role VARCHAR(20) NOT NULL DEFAULT 'warga' CHECK (role IN ('warga','petugas','admin')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -108,6 +109,7 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(180) NOT NULL UNIQUE,
+  password VARCHAR(255),
   role VARCHAR(20) NOT NULL DEFAULT 'warga' CHECK (role IN ('warga','petugas','admin')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -212,6 +214,7 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   email VARCHAR(180) NOT NULL UNIQUE,
+  password VARCHAR(255),
   role VARCHAR(20) NOT NULL DEFAULT 'warga' CHECK (role IN ('warga','petugas','admin')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -310,3 +313,4 @@ CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_comments_report_id ON comments(report_id);
 CREATE INDEX IF NOT EXISTS idx_report_status_history_report_id ON report_status_history(report_id);
 COMMIT;
+

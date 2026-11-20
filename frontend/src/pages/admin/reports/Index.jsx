@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar.jsx";
 import AdminTopbar from "../components/AdminTopbar.jsx";
 import ReportTable from "./components/ReportTable.jsx";
+import "./style/index.css";
 
 const API_URL = (
   import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/reports"
@@ -419,14 +420,6 @@ export default function IndexReports() {
               </label>
             </div>
           </section>
-          <div className="report-selection-bar">
-            <span>
-              <Wrench size={13} />{" "}
-              {selectedIds.length
-                ? `${selectedIds.length} pengaduan dipilih`
-                : "Pilih pengaduan untuk aksi massal"}
-            </span>
-          </div>
           {loading && (
             <div className="reports-feedback">Memuat data pengaduan...</div>
           )}

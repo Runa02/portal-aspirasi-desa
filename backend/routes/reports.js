@@ -1,4 +1,7 @@
 const express = require("express");
+const crypto = require("crypto");
+const fs = require("fs/promises");
+const path = require("path");
 const pool = require("../db");
 
 const router = express.Router();
@@ -13,6 +16,28 @@ const validId = (value) =>
 
 const validStatus = ["diajukan", "diproses", "selesai", "ditolak"];
 const validReportType = ["pengaduan", "aspirasi"];
+const allowedAttachmentTypes = new Set(["image/png", "image/jpeg"]);
+const allowedAttachmentExtensions = new Set(["png", "jpg", "jpeg"]);
+
+function validateAttachment(attachment) {
+  if (!attachment) return null;
+  if (
+    typeof attachment.name !== "string" ||
+    typeof attachment.type !== "string" ||
+    typeof attachment.data !== "string" ||
+    !allowedAttachmentTypes.has(attachment.type) ||
+    !allowedAttachmentExtensions.has(path.extname(attachment.name).slice(1).toLowerCase())
+  ) {
+    return "File bukti hanya boleh berupa PNG atau JPG/JPEG.";
+  }
+  if (!/^data:image\/(png|jpeg);base64,[a-zA-Z0-9+/=]+$/.test(attachment.data)) {
+    return "Format data file bukti tidak valid.";
+  }
+  if (!Number.isSafeInteger(Number(attachment.size)) || Number(attachment.size) <= 0 || Number(attachment.size) > 5 * 1024 * 1024) {
+    return "Ukuran file bukti maksimal 5 MB.";
+  }
+  return null;
+}
 
 function handleError(error, res) {
   console.error("Database Error:", error);
@@ -162,6 +187,7 @@ router.post("/", async (req, res) => {
     location,
     status = "diajukan",
     report_type = "pengaduan",
+    attachment = null,
   } = req.body || {};
 
   if (
@@ -178,8 +204,15 @@ router.post("/", async (req, res) => {
     });
   }
 
+  const attachmentError = validateAttachment(attachment);
+  if (attachmentError) return res.status(400).json({ message: attachmentError });
+
   try {
-    const result = await pool.query(
+    const client = await pool.connect();
+    let result;
+    try {
+      await client.query("BEGIN");
+      result = await client.query(
       `INSERT INTO reports
         (user_id, category_id, title, description, location, status, report_type)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -193,7 +226,28 @@ router.post("/", async (req, res) => {
         status,
         report_type,
       ],
-    );
+      );
+
+      if (attachment) {
+        const extension = path.extname(attachment.name).slice(1).toLowerCase();
+        const storedName = `${crypto.randomUUID()}.${extension}`;
+        const relativePath = path.join("uploads", "report-attachments", storedName);
+        const absoluteDirectory = path.join(__dirname, "..", "uploads", "report-attachments");
+        await fs.mkdir(absoluteDirectory, { recursive: true });
+        await fs.writeFile(path.join(absoluteDirectory, storedName), Buffer.from(attachment.data.split(",")[1], "base64"));
+        await client.query(
+          `INSERT INTO report_attachments (report_id, file_name, file_path, file_type, file_size)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [result.rows[0].id, attachment.name, relativePath, attachment.type, Number(attachment.size)],
+        );
+      }
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
 
     res.status(201).json({
       message: "Laporan berhasil dibuat",

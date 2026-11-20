@@ -1,0 +1,60 @@
+.admin-attachment-field {
+  position: relative;
+}
+
+.admin-file-dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 10px 12px;
+  color: #337763;
+  background: #f8fcfa;
+  border: 1px dashed #8cc8b4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.admin-file-dropzone:hover {
+  background: #f1faf6;
+  border-color: #347762;
+}
+
+.admin-file-dropzone > span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.admin-file-dropzone b {
+  color: #38506a;
+  font-size: 10px;
+  font-weight: 700;
+}
+.admin-file-dropzone small {
+  color: #8797a8;
+  font-size: 8px;
+}
+.admin-file-dropzone input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.admin-file-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 0;
+  color: #b65359;
+  font: 700 9px "DM Sans";
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
